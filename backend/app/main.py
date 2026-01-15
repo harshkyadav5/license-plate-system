@@ -16,8 +16,7 @@ Base.metadata.create_all(bind=engine)
 
 @app.on_event("startup")
 def startup():
-    load_yolo()
-    load_ocr()
+    print("API started (models load lazily)")
 
 MEDIA_DIR = os.getenv("MEDIA_DIR", "media")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")

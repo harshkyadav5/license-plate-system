@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 from dotenv import load_dotenv
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model, Model
+from app.ai.ctc_layer import CTCLossLayer
 
 load_dotenv()
 
@@ -17,9 +18,23 @@ ocr_model = None
 
 def load_ocr():
     global ocr_model
-    if ocr_model is None:
-        ocr_model = load_model(OCR_MODEL_PATH, compile=False)
-    return ocr_model
+    if ocr_model is not None:
+        return
+
+    print("Loading OCR model (this happens once)...")
+
+    training_model = load_model(
+        OCR_MODEL_PATH,
+        compile=False,
+        custom_objects={"CTCLossLayer": CTCLossLayer},
+    )
+
+    ocr_model = Model(
+        inputs=training_model.input,
+        outputs=training_model.get_layer("dense").output
+    )
+
+    print("OCR model loaded")
 
 
 def preprocess(img):
@@ -53,7 +68,9 @@ def ctc_decode(pred):
 
 
 def predict_plate(img):
-    model = load_ocr()
+    if ocr_model is None:
+        load_ocr()
+
     processed = preprocess(img)
-    pred = model.predict(processed, verbose=0)
+    pred = ocr_model.predict(processed, verbose=0)
     return ctc_decode(pred)
