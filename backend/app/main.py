@@ -22,3 +22,9 @@ MEDIA_DIR = os.getenv("MEDIA_DIR", "media")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 app.include_router(upload.router)
+
+@app.get("/health")
+def health():
+    return {
+        "status": "ok"
+    }

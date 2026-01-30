@@ -17,43 +17,35 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/upload")
-def upload_image(file: UploadFile, db: Session = Depends(get_db)):
-    image_path = save_upload(file)
-    img = cv2.imread(image_path)
-
-    if img is None:
-        raise HTTPException(status_code=400, detail="Invalid image")
-
-    yolo = load_yolo()
-    results = yolo(img)
-
-    if len(results[0].boxes) == 0:
-        raise HTTPException(status_code=404, detail="No plate detected")
-
-    box = results[0].boxes[0].xyxy[0].cpu().numpy()
+def crop_plate(image, box):
+    h, w = image.shape[:2]
     x1, y1, x2, y2 = map(int, box)
-    crop = img[y1:y2, x1:x2]
 
-    crop_path = save_crop(crop)
+    x1 = max(0, x1)
+    y1 = max(0, y1)
+    x2 = min(w, x2)
+    y2 = min(h, y2)
 
-    plate_text, confidence = predict_plate(crop)
+    return image[y1:y2, x1:x2]
 
-    record = ParkingLog(
-        image_path=image_path,
-        predicted_plate=plate_text,
-        actual_plate=plate_text,
-        confidence=confidence,
-        is_edited=False
-    )
-    db.add(record)
-    db.commit()
-    db.refresh(record)
+@router.post("/upload")
+async def upload_image(file: UploadFile = File(...)):
+    contents = await file.read()
+    np_img = np.frombuffer(contents, np.uint8)
+    image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+
+    detections = detect_plate(image)
+
+    if not detections:
+        return {"error": "No license plate detected"}
+
+    plate_box = detections[0]["bbox"]
+
+    plate_img = crop_plate(image, plate_box)
+
+    text, confidence = predict_plate(plate_img)
 
     return {
-        "id": record.id,
-        "image_path": image_path,
-        "crop_path": crop_path,
-        "predicted_plate": plate_text,
+        "plate_text": text,
         "confidence": confidence
     }
