@@ -64,6 +64,10 @@ def predict_plate(img):
     if ocr_model is None:
         raise RuntimeError("OCR model not loaded")
 
+    if img is None or img.size == 0:
+        return "", 0.0
+
     processed = preprocess(img)
     pred = ocr_model.predict(processed, verbose=0)
+
     return ctc_decode(pred)
