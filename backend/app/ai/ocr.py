@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import load_model, Model
+from keras.models import load_model, Model
 
 OCR_MODEL_PATH = os.getenv("OCR_MODEL_PATH", "ocr_infer.keras")
 
@@ -20,12 +20,7 @@ def load_ocr():
 
     print("Loading OCR inference model...")
 
-    training_model = load_model(OCR_MODEL_PATH, compile=False)
-
-    ocr_model = Model(
-        inputs=training_model.input,
-        outputs=training_model.get_layer("dense_2").output
-    )
+    ocr_model = load_model(OCR_MODEL_PATH, compile=False)
 
     print("OCR inference model loaded")
 
@@ -61,13 +56,9 @@ def ctc_decode(pred):
 
 
 def predict_plate(img):
-    if ocr_model is None:
-        raise RuntimeError("OCR model not loaded")
-
-    if img is None or img.size == 0:
+    if ocr_model is None or img is None or img.size == 0:
         return "", 0.0
 
     processed = preprocess(img)
     pred = ocr_model.predict(processed, verbose=0)
-
     return ctc_decode(pred)

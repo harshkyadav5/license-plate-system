@@ -1,10 +1,12 @@
-from fastapi import APIRouter, UploadFile, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, Depends, HTTPException, File
 from sqlalchemy.orm import Session
 import cv2
+import numpy as np
 
 from ..database import SessionLocal
 from ..models import ParkingLog
 from ..ai.yolo import load_yolo
+from ..ai.yolo import detect_plate
 from ..ai.ocr import predict_plate
 from ..utils.file_utils import save_upload, save_crop
 
