@@ -1,35 +1,30 @@
-import tensorflow as tf
-from tensorflow.keras import layers
-from tensorflow.keras.models import load_model, Model
+from keras.models import load_model, Model
+from keras.saving import register_keras_serializable
+from keras import layers
 
+@register_keras_serializable()
 class CTCLossLayer(layers.Layer):
     def call(self, inputs):
-        y_pred, labels, input_length, label_length = inputs
-        loss = tf.keras.backend.ctc_batch_cost(
-            labels, y_pred, input_length, label_length
-        )
-        self.add_loss(loss)
-        return y_pred
+        return inputs
 
-
-TRAIN_MODEL_PATH = "backend/ocr_model.keras"
-EXPORT_MODEL_PATH = "backend/ocr_infer.keras"
-
-print("Loading training OCR model...")
+print("Loading OCR training model...")
 
 training_model = load_model(
-    TRAIN_MODEL_PATH,
+    "backend/ocr_model.keras",
     compile=False,
-    custom_objects={"CTCLossLayer": CTCLossLayer},
+    custom_objects={
+        "CTCLossLayer": CTCLossLayer
+    }
 )
 
 print("Building inference model...")
 
+y_pred = training_model.layers[-2].output
+
 infer_model = Model(
-    inputs=training_model.input,
-    outputs=training_model.get_layer("dense_2").output
+    inputs=training_model.inputs[0],
+    outputs=y_pred
 )
 
-infer_model.save(EXPORT_MODEL_PATH)
-
-print(f"OCR inference model exported: {EXPORT_MODEL_PATH}")
+infer_model.save("backend/ocr_infer.keras")
+print("Saved backend/ocr_infer.keras")
