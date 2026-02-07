@@ -18,6 +18,8 @@ class ParkingLog(Base):
     entry_time = Column(TIMESTAMP, server_default=func.now())
     exit_time = Column(TIMESTAMP, nullable=True)
 
+    duration_minutes = Column(Float, nullable=True)
+
     is_edited = Column(Boolean, default=False)
 
     updated_at = Column(

@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from datetime import datetime
 
 from ..ai.yolo import load_yolo, detect_plate
 from ..ai.ocr import predict_plate
@@ -77,15 +78,21 @@ async def upload_image(
     )
 
     if last_log and last_log.status == "IN":
+        exit_time = datetime.utcnow()
+        duration = (exit_time - last_log.entry_time).total_seconds() / 60
+
         last_log.status = "OUT"
-        last_log.exit_time = func.now()
+        last_log.exit_time = exit_time
+        last_log.duration_minutes = round(duration, 2)
         last_log.confidence = confidence
+
         db.commit()
 
         return {
             "plate": plate_text,
             "status": "EXIT",
-            "confidence": confidence
+            "confidence": confidence,
+            "duration_minutes": last_log.duration_minutes
         }
 
     else:
