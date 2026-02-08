@@ -8,6 +8,8 @@ from .database import Base, engine
 from .ai.yolo import load_yolo
 from .ai.ocr import load_ocr
 
+from .routers import logs
+
 load_dotenv()
 
 app = FastAPI()
@@ -26,6 +28,7 @@ MEDIA_DIR = os.getenv("MEDIA_DIR", "media")
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 app.include_router(upload.router)
+app.include_router(logs.router)
 
 @app.get("/health")
 def health():
