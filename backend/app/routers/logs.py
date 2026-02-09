@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from ..database import SessionLocal
 from ..models import ParkingLog
@@ -38,3 +39,32 @@ def get_logs(
     )
 
     return logs
+
+
+@router.get("/stats")
+def get_parking_stats(db: Session = Depends(get_db)):
+    total_entries = db.query(ParkingLog).count()
+
+    total_exits = (
+        db.query(ParkingLog)
+        .filter(ParkingLog.status == "OUT")
+        .count()
+    )
+
+    currently_inside = (
+        db.query(ParkingLog)
+        .filter(ParkingLog.status == "IN")
+        .count()
+    )
+
+    last_activity = (
+        db.query(func.max(ParkingLog.updated_at))
+        .scalar()
+    )
+
+    return {
+        "total_entries": total_entries,
+        "total_exits": total_exits,
+        "currently_inside": currently_inside,
+        "last_activity": last_activity
+    }
