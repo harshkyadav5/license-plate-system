@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
+from ..schemas.logs import PlateCorrectionRequest
 from ..database import SessionLocal
 from ..models import ParkingLog
 
@@ -67,4 +68,28 @@ def get_parking_stats(db: Session = Depends(get_db)):
         "total_exits": total_exits,
         "currently_inside": currently_inside,
         "last_activity": last_activity
+    }
+
+
+@router.put("/logs/{log_id}/correct")
+def correct_plate(
+    log_id: int,
+    payload: PlateCorrectionRequest,
+    db: Session = Depends(get_db)
+):
+    log = db.query(ParkingLog).filter(ParkingLog.id == log_id).first()
+
+    if not log:
+        raise HTTPException(status_code=404, detail="Log not found")
+
+    log.actual_plate = payload.actual_plate.upper()
+    log.is_edited = True
+
+    db.commit()
+    db.refresh(log)
+
+    return {
+        "message": "Plate corrected successfully",
+        "log_id": log.id,
+        "actual_plate": log.actual_plate
     }
