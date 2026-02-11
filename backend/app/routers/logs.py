@@ -93,3 +93,26 @@ def correct_plate(
         "log_id": log.id,
         "actual_plate": log.actual_plate
     }
+
+
+@router.get("/logs/active")
+def get_active_vehicles(db: Session = Depends(get_db)):
+    active_logs = (
+        db.query(ParkingLog)
+        .filter(ParkingLog.status == "IN")
+        .order_by(ParkingLog.entry_time.desc())
+        .all()
+    )
+
+    return [
+        {
+            "id": log.id,
+            "plate": log.actual_plate or log.predicted_plate,
+            "confidence": log.confidence,
+            "entry_time": log.entry_time,
+            "image_path": log.image_path,
+            "crop_path": log.crop_path,
+            "is_edited": log.is_edited
+        }
+        for log in active_logs
+    ]
