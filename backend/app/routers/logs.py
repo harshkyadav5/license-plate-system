@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from datetime import datetime
+from sqlalchemy import or_
 
 from ..schemas.logs import PlateCorrectionRequest
 from ..database import SessionLocal
@@ -115,4 +117,53 @@ def get_active_vehicles(db: Session = Depends(get_db)):
             "is_edited": log.is_edited
         }
         for log in active_logs
+    ]
+
+
+@router.get("/logs/search")
+def search_logs(
+    plate: str | None = None,
+    from_date: str | None = None,
+    to_date: str | None = None,
+    status: str | None = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(ParkingLog)
+
+    if plate:
+        query = query.filter(
+            or_(
+                ParkingLog.actual_plate.ilike(f"%{plate}%"),
+                ParkingLog.predicted_plate.ilike(f"%{plate}%")
+            )
+        )
+
+    if from_date:
+        query = query.filter(
+            ParkingLog.entry_time >= datetime.fromisoformat(from_date)
+        )
+
+    if to_date:
+        query = query.filter(
+            ParkingLog.entry_time <= datetime.fromisoformat(to_date)
+        )
+
+    if status and status.upper() in ["IN", "OUT"]:
+        query = query.filter(ParkingLog.status == status.upper())
+
+    logs = query.order_by(ParkingLog.entry_time.desc()).all()
+
+    return [
+        {
+            "id": log.id,
+            "plate": log.actual_plate or log.predicted_plate,
+            "confidence": log.confidence,
+            "status": log.status,
+            "entry_time": log.entry_time,
+            "exit_time": log.exit_time,
+            "is_edited": log.is_edited,
+            "image_path": log.image_path,
+            "crop_path": log.crop_path
+        }
+        for log in logs
     ]
