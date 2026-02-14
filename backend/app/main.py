@@ -9,10 +9,12 @@ from .ai.yolo import load_yolo
 from .ai.ocr import load_ocr
 
 from .routers import logs
+from app.routers import auth
 
 load_dotenv()
 
 app = FastAPI()
+app.include_router(auth.router)
 
 Base.metadata.create_all(bind=engine)
 

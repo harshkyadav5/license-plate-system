@@ -2,7 +2,6 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 import numpy as np
 import cv2
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 from datetime import datetime
 
 from ..ai.yolo import load_yolo, detect_plate
@@ -10,6 +9,7 @@ from ..ai.ocr import predict_plate
 from ..database import SessionLocal
 from ..models import ParkingLog
 from ..utils.file_utils import save_upload, save_crop
+from ..core.security import get_current_admin
 
 router = APIRouter()
 
@@ -45,7 +45,8 @@ def crop_plate(image, box):
 @router.post("/upload")
 async def upload_image(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
 ):
     contents = await file.read()
 

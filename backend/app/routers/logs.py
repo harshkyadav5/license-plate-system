@@ -1,12 +1,12 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import datetime
-from sqlalchemy import or_
 
 from ..schemas.logs import PlateCorrectionRequest
 from ..database import SessionLocal
 from ..models import ParkingLog
+from ..core.security import get_current_admin
 
 router = APIRouter(prefix="/logs", tags=["Logs"])
 
@@ -73,11 +73,12 @@ def get_parking_stats(db: Session = Depends(get_db)):
     }
 
 
-@router.put("/logs/{log_id}/correct")
+@router.put("/{log_id}/correct")
 def correct_plate(
     log_id: int,
     payload: PlateCorrectionRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
 ):
     log = db.query(ParkingLog).filter(ParkingLog.id == log_id).first()
 
@@ -97,8 +98,11 @@ def correct_plate(
     }
 
 
-@router.get("/logs/active")
-def get_active_vehicles(db: Session = Depends(get_db)):
+@router.get("/active")
+def get_active_vehicles(
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
+):
     active_logs = (
         db.query(ParkingLog)
         .filter(ParkingLog.status == "IN")
@@ -120,13 +124,14 @@ def get_active_vehicles(db: Session = Depends(get_db)):
     ]
 
 
-@router.get("/logs/search")
+@router.get("/search")
 def search_logs(
     plate: str | None = None,
     from_date: str | None = None,
     to_date: str | None = None,
     status: str | None = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    admin: str = Depends(get_current_admin)
 ):
     query = db.query(ParkingLog)
 
