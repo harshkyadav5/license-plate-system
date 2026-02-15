@@ -1,28 +1,11 @@
-import { useState } from "react";
-
-const dummyHistory = [
-  {
-    id: 1,
-    image_url: "/media/sample1.jpg",
-    plate_text: "DL8CAF5031",
-    confidence: 0.94,
-    created_at: "2025-01-12 14:32",
-  },
-  {
-    id: 2,
-    image_url: "/media/sample2.jpg",
-    plate_text: "MH12AB1234",
-    confidence: 0.89,
-    created_at: "2025-01-11 10:18",
-  },
-];
+import { useState, useEffect } from "react";
 
 export default function App() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [history] = useState(dummyHistory);
+  const [history, setHistory] = useState([]);
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -33,6 +16,20 @@ export default function App() {
     setPreview(URL.createObjectURL(selected));
     setResult(null);
   };
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/logs");
+      const data = await res.json();
+      setHistory(data);
+    } catch (err) {
+      console.error("Failed to load history");
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const handleUpload = async () => {
     if (!file) {
@@ -55,6 +52,7 @@ export default function App() {
 
       const data = await response.json();
       setResult(data);
+      await fetchHistory();
     } catch (error) {
       alert(error.message);
     } finally {
@@ -162,15 +160,14 @@ export default function App() {
               </thead>
               <tbody>
                 {history.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b last:border-none"
-                  >
+                  <tr key={item.id} className="border-b last:border-none">
                     <td className="py-3 font-medium tracking-wider">
-                      {item.plate_text}
+                      {item.actual_plate || item.predicted_plate}
                     </td>
                     <td>{(item.confidence * 100).toFixed(2)}%</td>
-                    <td className="text-gray-500">{item.created_at}</td>
+                    <td className="text-gray-500">
+                      {new Date(item.entry_time).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
