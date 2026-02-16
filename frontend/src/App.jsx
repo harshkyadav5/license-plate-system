@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import UploadBox from "./components/UploadBox";
+import ResultCard from "./components/ResultCard";
+import HistoryTable from "./components/HistoryTable";
 
 export default function App() {
   const [file, setFile] = useState(null);
@@ -12,8 +15,12 @@ export default function App() {
     if (!selected)
       return;
 
+    if (preview)
+      URL.revokeObjectURL(preview);
+
+    const url = URL.createObjectURL(selected);
     setFile(selected);
-    setPreview(URL.createObjectURL(selected));
+    setPreview(url);
     setResult(null);
   };
 
@@ -76,104 +83,18 @@ export default function App() {
 
       {/* Main */}
       <main className="max-w-6xl mx-auto px-6 pt-32 pb-10 space-y-10">
-        {/* Upload + Result */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-medium mb-2">Upload Image</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Upload a vehicle image to detect and recognize the license plate.
-            </p>
+          <UploadBox
+            preview={preview}
+            loading={loading}
+            onFileChange={handleFileChange}
+            onUpload={handleUpload}
+          />
 
-            <label className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 cursor-pointer hover:border-gray-400 transition">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <span className="text-sm text-gray-500">
-                Click to upload or drag & drop
-              </span>
-            </label>
-
-            {preview && (
-              <img
-                src={preview}
-                alt="preview"
-                className="w-full h-48 object-contain rounded-lg mt-4 bg-gray-100"
-              />
-            )}
-
-            <button
-              onClick={handleUpload}
-              disabled={loading}
-              className="mt-4 w-full bg-black text-white py-2.5 rounded-xl hover:opacity-90 disabled:opacity-50 transition"
-            >
-              {loading ? "Processing..." : "Detect License Plate"}
-            </button>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-medium mb-2">Result</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              Recognition output will appear here.
-            </p>
-
-            {!result && (
-              <div className="text-gray-400 text-sm flex items-center justify-center h-40 border rounded-xl">
-                No result yet
-              </div>
-            )}
-
-            {result && (
-              <div className="space-y-3">
-                <div className="p-4 rounded-xl bg-gray-100">
-                  <p className="text-sm text-gray-500">Detected Plate</p>
-                  <p className="text-xl font-semibold tracking-wider">
-                    {result.text}
-                  </p>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gray-100">
-                  <p className="text-sm text-gray-500">Confidence</p>
-                  <p className="text-lg font-medium">
-                    {(result.confidence * 100).toFixed(2)}%
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          <ResultCard result={result} />
         </div>
 
-        {/* History Section */}
-        <section className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="text-lg font-medium mb-4">Detection History</h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-500 border-b">
-                  <th className="py-2">Plate</th>
-                  <th>Confidence</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.map((item) => (
-                  <tr key={item.id} className="border-b last:border-none">
-                    <td className="py-3 font-medium tracking-wider">
-                      {item.actual_plate || item.predicted_plate}
-                    </td>
-                    <td>{(item.confidence * 100).toFixed(2)}%</td>
-                    <td className="text-gray-500">
-                      {new Date(item.entry_time).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <HistoryTable history={history} />
       </main>
 
       {/* Footer */}
