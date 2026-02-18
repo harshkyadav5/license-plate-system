@@ -27,6 +27,13 @@ export default function ResultCard({ result }) {
               {(result.confidence * 100).toFixed(2)}%
             </p>
           </div>
+
+          <button
+            onClick={() => navigator.clipboard.writeText(result.text)}
+            className="mt-2 text-sm text-blue-600 hover:underline"
+          >
+            Copy plate number
+          </button>
         </div>
       )}
     </div>

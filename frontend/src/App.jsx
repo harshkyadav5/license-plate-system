@@ -9,6 +9,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const [search, setSearch] = useState("");
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
@@ -29,8 +30,27 @@ export default function App() {
       const res = await fetch("http://127.0.0.1:8000/logs");
       const data = await res.json();
       setHistory(data);
+
+      setTimeout(() => {
+        document.getElementById("latest-row")?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 200);
     } catch (err) {
       console.error("Failed to load history");
+    }
+  };
+
+  const deleteLog = async (id) => {
+    try {
+      await fetch(`http://127.0.0.1:8000/logs/${id}`, {
+        method: "DELETE",
+      });
+
+      fetchHistory();
+    } catch (err) {
+      console.error("Failed to delete log");
     }
   };
 
@@ -94,7 +114,12 @@ export default function App() {
           <ResultCard result={result} />
         </div>
 
-        <HistoryTable history={history} />
+        <HistoryTable
+          history={history}
+          onDelete={deleteLog}
+          search={search}
+          setSearch={setSearch}
+        />
       </main>
 
       {/* Footer */}
