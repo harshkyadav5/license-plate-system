@@ -1,4 +1,16 @@
+import { useState, useEffect } from "react";
+
 export default function HistoryTable({ history, onDelete, search, setSearch  }) {
+  const [previewImage, setPreviewImage] = useState(null);
+
+  const closeModal = () => setPreviewImage(null);
+
+  useEffect(() => {
+    const handler = (e) => e.key === "Escape" && closeModal();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const filteredHistory = history.filter((item) =>
     item.plate_text.toLowerCase().includes(search.toLowerCase())
   );
@@ -38,7 +50,10 @@ export default function HistoryTable({ history, onDelete, search, setSearch  }) 
                 <td className="py-3">
                   <img
                     src={`http://127.0.0.1:8000${item.image_url}`}
-                    className="h-12 w-20 object-cover rounded-lg border"
+                    className="h-12 w-20 object-cover rounded-lg border cursor-pointer hover:opacity-80"
+                    onClick={() =>
+                      setPreviewImage(`http://127.0.0.1:8000${item.image_url}`)
+                    }
                   />
                 </td>
 
@@ -65,6 +80,30 @@ export default function HistoryTable({ history, onDelete, search, setSearch  }) 
           </tbody>
         </table>
       </div>
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          onClick={closeModal}
+        >
+          <div
+            className="relative bg-white rounded-xl p-3 max-w-4xl w-[90%]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+              onClick={closeModal}
+            >
+              ✕
+            </button>
+
+            <img
+              src={previewImage}
+              className="w-full max-h-[80vh] object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
