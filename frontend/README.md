@@ -29,3 +29,35 @@ It communicates with the FastAPI backend to:
 * Parking entry / exit tracking
 * JWT authentication ready
 * Clean modular component architecture
+
+---
+
+## Setup & Installation
+
+### 1.Clone repository
+```bash
+git clone <repo-url>
+cd frontend
+```
+
+### 2.Install dependencies
+```bash
+npm install
+```
+
+### 3.Start development server
+```bash
+npm run dev
+```
+
+App runs on:
+```bash
+http://localhost:5173
+```
+---
+Backend API Integration
+
+The frontend expects the backend to run on:
+```bash
+http://127.0.0.1:8000
+```
